@@ -303,10 +303,6 @@ public class Bot {
 				}
 
 				if(msg.Channel.Id != Data.backRoomID && msg.Channel.Id != Data.arenaID && msg.Channel.Id != Data.slotsID && msg.Channel.Id != Data.shopID) {
-					Data.members[msg.Author.Id].chatexp += 1;
-					Data.members[msg.Author.Id].totalMessages += 1;
-					Data.members[Data.botID].totalMessages += 1;
-
 					Data.members[msg.Author.Id].AddChatExp(1);
 					Data.members[Data.botID].AddChatExp(1);
 					thingsChanged = true;

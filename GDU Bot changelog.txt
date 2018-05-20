@@ -1,3 +1,6 @@
+v3.0.1.4 : 5/19/18
+> Users no longer gain 2 exp per message. Only 1, like before.
+
 v3.0.1.3 : 5/19/18
 > Fixed chat exp curve
 
