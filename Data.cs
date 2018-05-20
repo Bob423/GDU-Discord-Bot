@@ -15,7 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 // Static variables to allow all classes to access everything they need
 public static class Data {
 
-	public static string version = "3.0.0.2";
+	public static string version = "3.0.1.2";
 
 	public static DiscordSocketClient client;
 	public static CommandService cmdService;
@@ -263,11 +263,7 @@ public static class Data {
 
 				expNext = (int)((level * 5) * 1.1f);
 
-				if(chatLevel > 0) {
-					this.chatexpNext = (ulong)(Math.Pow((10 * chatLevel + 1), 1.5) * 0.5);
-				} else {
-					this.chatexpNext = 15;
-				}
+				this.chatexpNext = (ulong)(15 + level * 3.4f);
 					
 			} else {
 

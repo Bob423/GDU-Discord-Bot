@@ -1,3 +1,6 @@
+v3.0.1.3 : 5/19/18
+> Fixed chat exp curve
+
 v3.0.0.3 : 5/19/18:
 > Added token file to store tokens. For my own convenience
 
@@ -5,6 +8,9 @@ v3.0.0.2 : 5/19/18:
 + Added $version command.
 
 v3.0.0.1 : 5/19/18:
++ $github command added to view the bot's source code.
+
+v3.0.0.0 : 5/19/18:
 > Hundreds of behind the scenes changes
 > Arena has been completely overhauled
 + GDU Bot boss added to the arena
@@ -19,4 +25,3 @@ v3.0.0.1 : 5/19/18:
 + Tweaked slots for a greater chance of winning
 + Added stopFight command
 > $me and $profile only show a user's profile. $stats shows arena stats
-+ $github command added to view the bot's source code
