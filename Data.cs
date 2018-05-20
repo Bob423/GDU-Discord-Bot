@@ -15,7 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 // Static variables to allow all classes to access everything they need
 public static class Data {
 
-	public static string version = "3.1.1.6";
+	public static string version = "3.1.2.0";
 
 	public static DiscordSocketClient client;
 	public static CommandService cmdService;

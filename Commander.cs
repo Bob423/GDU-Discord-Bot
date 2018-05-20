@@ -12,48 +12,44 @@ using Microsoft.Extensions.DependencyInjection;
 public class Commander : ModuleBase<CommandContext> {
 
 	// help
-	[Command("help"), Alias("commands"), Summary("Displays a list of commands and their aliases.")]
-	public async Task Help(string help = "commands") {
+	[Command("help"), Alias("commands"), Summary("Displays a list of commands and their aliases. Type a number to display different pages.")]
+	public async Task Help(string page = "1") {
 		string message = "";
 
-		if(help.Equals("commands") || help.Equals("2")) {
-			int pageStart;
-			int pageEnd;
-
-			if(help.Equals("2")) {
-				pageStart = 11;
-				pageEnd = Data.cmdService.Commands.ToList().Count() - hiddenCommands;
-				message += "**Commands (Page 2/2):** \n";
-			} else {
-				pageStart = 0;
-				pageEnd = 10;
-				message += "**Commands (Page 1/2):** \n";
-			}
-
-			for(int i = pageStart; i < pageEnd; i++) {
-				message += "`$"+ Data.cmdService.Commands.ToList()[i].Aliases[0];
-				
-				if(Data.cmdService.Commands.ToList()[i].Aliases.Count() > 1) {
-
-					foreach(string alias in Data.cmdService.Commands.ToList()[i].Aliases) {
-
-						if(!alias.Equals(Data.cmdService.Commands.ToList()[i].Name)) {
-							message += " $"+ alias;
-						}
-					}
-				}
-
-				message += "`\n";
-			}
-
-			message += "\nAdd \"help\" to the end of one of these for more info."+
-		"\n**NOTE: Please don't spam commands. The bot can get backed up easily and there is currently no easy fix to this, so chill.\n"+
-		"You may even need to wait a few seconds for a command to register.**\n";
-		}
-
-		if(help.Equals("help") || help.Equals("me") || help.ToLower().Equals("i need somebody")) {
+		if(page.Equals("me") || page.ToLower().Equals("i need somebody")) {
 
 			message = "Help is on the way! :ambulance: \n https://www.youtube.com/watch?v=ZNahS3OHPwA";
+		} else {
+			try {
+				CommandInfo[] commands = Data.cmdService.Commands.ToArray();
+				int pageNum = int.Parse(page);
+				int pageStart = (pageNum - 1) * 10;
+				int pageEnd;
+
+				if(10 * pageNum >= commands.Length) {
+					pageEnd = commands.Length - hiddenCommands;
+				} else {
+					pageEnd = 10 * pageNum;
+				}
+
+				message += "**Commands:**\n(Page "+ pageNum +" out of "+ (commands.Length + 9) / 10 +")\n\n";
+
+				for(int i = pageStart; i < pageEnd; i++) {
+					message += "`";
+
+					foreach(string alias in commands[i].Aliases) {
+						message += "$"+ alias +" ";
+					}
+
+					message += "`\n";
+				}
+				
+				message += "\nAdd \"help\" to the end of one of these for more info."+
+				"\n**NOTE: Please don't spam commands. The bot can get backed up easily and there is currently no easy fix to this, so chill.\n"+
+				"You may even need to wait a few seconds for a command to register.**\n";
+			} catch {
+
+			}
 		}
 
 		await ReplyAsync(message);
@@ -63,7 +59,7 @@ public class Commander : ModuleBase<CommandContext> {
 	[Command("math"), Alias("solve"), Summary("Solves one simple mathmatical expression, like 4 + 4 for example\n"+
 		"Certain words and phrases (in quotes) also work, like plus, minus, \"divided by\", etc.\n"+
 		"Can add, subtract, divide, multiply, find remainders, and do exponents.")]
-	public async Task Math(float operand1 = 1, string @operator ="+", float operand2 = 1) {
+	public async Task SolveMath(float operand1 = 1, string @operator ="+", float operand2 = 1) {
 		float sollution = 0;
 
 		// Add
@@ -790,6 +786,63 @@ public class Commander : ModuleBase<CommandContext> {
 		}
 	}
 
+	[Command("miningLevel"), Summary("Displays a user's mining level")]
+	public async Task MiningLevel(string user = "me") {
+		ulong userId = 0;
+		string message = "User not found.";
+
+		if(!user.Equals("me")) {
+			userId = Data.GetMemberId(user);
+		} else {
+			userId = Context.User.Id;
+		}
+
+		if(userId > 200) {
+			await Data.members[userId].UpdateStats();
+			await Data.members[userId].UpdateSocket();
+
+			message = 
+			"**Username:** " + Data.members[userId].Username + "\n" +
+			"**Nickname:** " + Data.members[userId].Nickname + "\n" +
+			"\n:pick:\n"+
+			"**Mining Level:** " + Data.members[userId].miningLevel + "\n" +
+			"**Mining EXP:** " + Data.members[userId].miningExp + "\n" +
+			"**Mining EXP To Next Level:** " + Data.members[userId].miningExpNext +" ("+ (Data.members[userId].miningExpNext - Data.members[userId].miningExp) +" more)\n"+
+			"**Total Mining EXP:** " + Data.members[userId].totalMiningExp + "\n" +
+
+			"**Gold:** " + Data.members[userId].gold + "\n\n";
+		}
+
+		await ReplyAsync(message);
+	}
+
+	// top miners (10)
+	[Command("miners"), Alias("topMiners"), Summary("Displays a list of users and their mining levels")]
+	public async Task Miners(int number = 10) {
+		List<Data.User> users = Data.members.Values.OrderByDescending(user => user.totalMiningExp).ToList();
+		List<Data.User> UsernameCut = users.OrderByDescending(user => user.Username.Length).ToList();
+		List<Data.User> NicknameCut = users.OrderByDescending(user => user.Nickname.Length).ToList();
+		int numOfUsers = number;
+
+		if(number > users.Count()) {
+			numOfUsers = users.Count();
+		}
+
+		string message = "[Top "+ number +" Miners]\n\n";
+
+		for(int i = 0; i < numOfUsers; i++) {
+
+			message += "[#"+ (i+1).ToString("0#") +"] "+ users[i].Username +
+				AddSpace(UsernameCut[0].Username.Length, users[i].Username)+
+				" / "+ users[i].Nickname +
+				AddSpace(NicknameCut[0].Nickname.Length, users[i].Nickname)+
+				" | Lv."+ string.Format("{0,2}", users[i].miningLevel) +" | "+ string.Format("{0,2}", users[i].totalMiningExp) +" EXP\n";
+			
+		}
+
+		await ReplyAsync("```"+ message +"```");
+	}
+
 	// Stop the fight!
 	[Command("stopFight"), Summary("Cancel the fight with GDU Bot and reset his HP and target list.")]
 	public async Task StopFight() {
@@ -873,18 +926,20 @@ public class Commander : ModuleBase<CommandContext> {
 
 	// Decides if user attack is a crit
 	public bool GetCrit(int userCrit) {
-		float critRate = 0;
-		
-		// Calculate crit rate
-		if(userCrit < 100) {
-			critRate = 5 + (userCrit / 10.0f);
-		} else {
-			critRate = 15 + (userCrit / 50.0f);
-		}
+		float critRate = calculateCrit(userCrit);
 
 		int rng = new Random().Next(0, 100);
 
 		return (rng <= critRate);
+	}
+
+	public float calculateCrit(int userCrit) {
+		// Calculate crit rate
+		if(userCrit < 100) {
+			return 5.0f + (userCrit / 10.0f);
+		} else {
+			return 15.0f + (userCrit / 50.0f);
+		}
 	}
 
 	// Bot AI Reaction
@@ -1182,17 +1237,10 @@ public class Commander : ModuleBase<CommandContext> {
 
 				"**HP: **" + Data.members[id].hp + " / " + Data.members[id].maxHP + "\n" +
 				"**Strength:** " + Data.members[id].strength + "\n" +
-				"**Crit Rate:** " + Data.members[id].critical + "\n" +
+				"**Crit Rate:** " + Data.members[id].critical + "("+ calculateCrit(Data.members[id].critical) +"%)\n" +
 				"**Weapon:** " + Data.members[id].inventory[0].quantity + "\n" +
 				"**Armor:** " + Data.members[id].inventory[1].quantity + "\n" +
 				"**Health Potions:** "+ Data.members[id].inventory[2].quantity + "\n" +
-
-				"\n:pick:\n"+
-				"**Mining Level:** " + Data.members[id].miningLevel + "\n" +
-				"**Mining EXP:** " + Data.members[id].miningExp + "\n" +
-				"**Mining EXP To Next Level:** " + Data.members[id].miningExpNext +" ("+ (Data.members[id].miningExpNext - Data.members[id].miningExp) +" more)\n"+
-				"**Total Mining EXP:** " + Data.members[id].totalMiningExp + "\n" +
-
 				"**Gold:** " + Data.members[id].gold + "\n\n";
 		}
 
