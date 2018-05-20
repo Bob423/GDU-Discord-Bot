@@ -1169,6 +1169,8 @@ public class Commander : ModuleBase<CommandContext> {
 			return
 				"**Username:** " + Data.members[id].Username + "\n" +
 				"**Nickname:** " + Data.members[id].Nickname + "\n" +
+
+				":crossed_swords: \n"+
 				"**Level:** " + Data.members[id].level + "\n" +
 				"**EXP:** " + Data.members[id].exp + "\n" +
 				"**EXP To Next Level:** " + Data.members[id].expNext +" ("+ (Data.members[id].expNext - Data.members[id].exp) +" more)\n"+
@@ -1182,6 +1184,13 @@ public class Commander : ModuleBase<CommandContext> {
 				"**Weapon:** " + Data.members[id].inventory[0].quantity + "\n" +
 				"**Armor:** " + Data.members[id].inventory[1].quantity + "\n" +
 				"**Health Potions:** "+ Data.members[id].inventory[2].quantity + "\n" +
+
+				":pick:\n"+
+				"**Mining Level:** " + Data.members[id].miningLevel + "\n" +
+				"**Mining EXP:** " + Data.members[id].miningExp + "\n" +
+				"**Mining EXP To Next Level:** " + Data.members[id].miningExpNext +" ("+ (Data.members[id].miningExpNext - Data.members[id].miningExp) +" more)\n"+
+				"**Total Mining EXP:** " + Data.members[id].totalMiningExp + "\n" +
+
 				"**Gold:** " + Data.members[id].gold + "\n\n";
 		}
 
