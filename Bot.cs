@@ -18,6 +18,18 @@ public class Bot {
 
 	// Main
 	public async Task MainAsync() {
+		// Get Token Files
+		FileInfo tokenFile = new FileInfo(@"txt/tokens.txt");
+		string[] tokens = new string[2];
+
+		for(int i = 0; i < tokens.Length; i++) {
+			tokens[i] = tokenFile.OpenText().ReadLine();
+		}
+	
+		Data.mainToken = tokens[0];
+		Data.devToken = tokens[1];
+		Data.token = Data.mainToken; // Change this to switch servers. Everything else (channel and server IDs) should change accordingly.
+
 		Data.client = new DiscordSocketClient();
 		Data.cmdService = new CommandService();
 		Data.services = new ServiceCollection().BuildServiceProvider();

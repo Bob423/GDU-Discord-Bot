@@ -22,9 +22,9 @@ public static class Data {
 	public static IServiceProvider services;
 
 	// Tokens
-	public const string mainToken = "";
-	public const string devToken = "";
-	public const string token = mainToken; // Change this to switch servers. Everything else (channel and server IDs) should change accordingly.
+	public static string mainToken;
+	public static string devToken;
+	public static string token;
 
 	// Server IDs
 	public const ulong GDUID = 317547320738840576;
