@@ -263,7 +263,7 @@ public static class Data {
 
 				expNext = (int)((level * 5) * 1.1f);
 
-				this.chatexpNext = (ulong)(15 + level * 3.4f);
+				this.chatexpNext = (ulong)(15 + chatLevel * 3.4f);
 					
 			} else {
 
