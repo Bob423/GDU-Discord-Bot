@@ -764,7 +764,7 @@ public class Commander : ModuleBase<CommandContext> {
 				string message = "*ting ting...*\n"+
 					"You found...\n";
 
-				if(rng < 10) { // 10%
+				if(rng < 20) { // 10%
 					int minGold = Data.members[Context.User.Id].miningLevel + Data.members[Context.User.Id].level;
 					int maxGold = 25 + Data.members[Context.User.Id].miningLevel + Data.members[Context.User.Id].level;
 
