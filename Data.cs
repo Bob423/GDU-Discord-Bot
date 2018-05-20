@@ -41,6 +41,7 @@ public static class Data {
 	public const ulong GDUArenaID = 433754337525760022;
 	public const ulong GDUShopID = 435965658732167189;
 	public const ulong GDUSlotsID = 434119878312460299;
+	public const ulong GDUMinesID = 447649427067240455;
 	public const ulong backRoomID = 317557573245206531;
 
 	/// <summary>
@@ -55,6 +56,10 @@ public static class Data {
 	/// ID of current server's slots channel
 	/// </summary>
 	public static ulong slotsID;
+	/// <summary>
+	/// ID of current server's mining channel
+	/// </summary>
+	public static ulong minesID;
 	/// <summary>
 	/// ID of current server's general channel
 	/// </summary>
@@ -99,18 +104,18 @@ public static class Data {
 		new Data.ShopItem("Health Potion", 2, 20, true, 0.3f),
 	};
 	/*
-		new SlotResult("Marked", 345037495060267018),
-		new SlotResult("RMXPol", 342912767461687298),
-		new SlotResult("isaacsol", 445009442828714011),
-		new SlotResult("Bob", 345036765926522880),
-		new SlotResult("gaust", 433466411373953034)
-	*/
-	public static List<SlotResult> slotEmojis = new List<SlotResult>() {
 		new SlotResult("Marked", 433934233476661279),
 		new SlotResult("RMXPol", 433934233078071296),
 		new SlotResult("isaacsol", 445087987466895371),
 		new SlotResult("Bob", 433934152656748544),
 		new SlotResult("gaust", 433934215881424896)
+	*/
+	public static List<SlotResult> slotEmojis = new List<SlotResult>() {
+		new SlotResult("Marked", 345037495060267018),
+		new SlotResult("RMXPol", 342912767461687298),
+		new SlotResult("isaacsol", 445009442828714011),
+		new SlotResult("Bob", 345036765926522880),
+		new SlotResult("gaust", 433466411373953034)
 	};
 
 	public static List<ulong> fighters = new List<ulong>() {};
@@ -143,7 +148,12 @@ public static class Data {
 		public int critical;
 		public int secretStat;
 
-		public int money;
+		public int miningLevel;
+		public int miningExp;
+		public int miningExpNext;
+		public int totalMiningExp;
+
+		public int gold;
 
 		public int baseHP;
 		public int baseSTR;
@@ -262,8 +272,8 @@ public static class Data {
 				critical = (int)(baseCRIT + (level / 4));
 
 				expNext = (int)((level * 5) * 1.1f);
-
 				this.chatexpNext = (ulong)(15 + chatLevel * 3.4f);
+				miningExp = (int)(20 + (level * 5));
 					
 			} else {
 
@@ -395,10 +405,35 @@ public static class Data {
 			}
 
 			if(displayMessages) {
-				client.GetGuild(currentServer).GetTextChannel(generalID).SendMessageAsync(Username + "'s chat level has increased to level "+ chatLevel +"!");
+				client.GetGuild(currentServer).GetTextChannel(generalID).SendMessageAsync(
+					Username + "'s chat level has increased to level "+ chatLevel +"!");
+			}
+			return Task.CompletedTask;
+		}
+
+		public bool AddMiningExp(int amount) {
+			miningExp += amount;
+			totalMiningExp += amount;
+
+			if(miningExp >= miningExpNext) {
+				MiningLevelUp();
+				return true;
 			}
 
-			this.chatexpNext = (ulong)(Math.Pow((10 * chatLevel + 1), 1.5) * 0.5);
+			return false;
+		}
+
+		public Task MiningLevelUp() {
+
+			while(miningExp >= miningExpNext) {
+				miningExp -= miningExpNext;
+				miningLevel++;
+				UpdateStats();
+			}
+
+			client.GetGuild(currentServer).GetTextChannel(generalID).SendMessageAsync(
+				Username + "'s mining level has increased to level "+ miningLevel +"!");
+
 			return Task.CompletedTask;
 		}
 

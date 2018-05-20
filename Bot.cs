@@ -155,6 +155,7 @@ public class Bot {
 			Data.arenaID = Data.GDUArenaID;
 			Data.slotsID = Data.GDUSlotsID;
 			Data.shopID = Data.GDUShopID;
+			Data.minesID = Data.GDUMinesID;
 			Data.botID = Data.GDUBotID;
 		}else
 
@@ -165,6 +166,7 @@ public class Bot {
 			Data.arenaID = Data.BotworksGeneralID;
 			Data.slotsID = Data.BotworksGeneralID;
 			Data.shopID = Data.BotworksGeneralID;
+			Data.minesID = Data.BotworksGeneralID;
 			Data.botID = Data.devBotID;
 		}
 

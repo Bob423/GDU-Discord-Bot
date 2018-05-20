@@ -1,3 +1,6 @@
+v3.1.1.4 : 5/20/18
++ Added mining system
+
 v3.0.1.4 : 5/19/18
 > Users no longer gain 2 exp per message. Only 1, like before.
 

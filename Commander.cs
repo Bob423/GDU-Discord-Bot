@@ -13,13 +13,24 @@ public class Commander : ModuleBase<CommandContext> {
 
 	// help
 	[Command("help"), Alias("commands"), Summary("Displays a list of commands and their aliases.")]
-	public async Task Help(string help ="commands") {
+	public async Task Help(string help = "commands") {
 		string message = "";
 
-		if(help.Equals("commands")) {
-			message += "**Commands: ** \n";
+		if(help.Equals("commands") || help.Equals("2")) {
+			int pageStart;
+			int pageEnd;
 
-			for(int i = 0; i < Data.cmdService.Commands.Count() - hiddenCommands; i++) {
+			if(help.Equals("2")) {
+				pageStart = 11;
+				pageEnd = Data.cmdService.Commands.ToList().Count() - hiddenCommands;
+				message += "**Commands (Page 2/2):** \n";
+			} else {
+				pageStart = 0;
+				pageEnd = 10;
+				message += "**Commands (Page 1/2):** \n";
+			}
+
+			for(int i = pageStart; i < pageEnd; i++) {
 				message += "`$"+ Data.cmdService.Commands.ToList()[i].Aliases[0];
 				
 				if(Data.cmdService.Commands.ToList()[i].Aliases.Count() > 1) {
@@ -40,7 +51,7 @@ public class Commander : ModuleBase<CommandContext> {
 		"You may even need to wait a few seconds for a command to register.**\n";
 		}
 
-		if(help.Equals("help")) {
+		if(help.Equals("help") || help.Equals("me") || help.ToLower().Equals("i need somebody")) {
 
 			message = "Help is on the way! :ambulance: \n https://www.youtube.com/watch?v=ZNahS3OHPwA";
 		}
@@ -400,7 +411,7 @@ public class Commander : ModuleBase<CommandContext> {
 					ulong firstTargetId = Data.members[targetId].GetFirstTarget().Id;
 
 					message += "\n\n**"+ Data.members[targetId].Username +"** has been defeated!\n";
-					int moneyDrop = (int)((Data.members[targetId].level * 5) + (Data.members[targetId].money * 0.1f));
+					int moneyDrop = (int)((Data.members[targetId].level * 5) + (Data.members[targetId].gold * 0.1f));
 
 					// Give exp
 					List<ulong> leveledHelpers = new List<ulong>();
@@ -417,7 +428,7 @@ public class Commander : ModuleBase<CommandContext> {
 								leveledHelpers.Add(helper.Id);
 							}
 
-							Data.members[helper.Id].money += moneyDrop;
+							Data.members[helper.Id].gold += moneyDrop;
 
 							message += Data.members[helper.Id].Username +" gained "+ expDrop +
 								" EXP and "+ moneyDrop +" gold!\n";
@@ -612,7 +623,7 @@ public class Commander : ModuleBase<CommandContext> {
 					// Display shop
 					string shop = "**Arena Shop**```\n"+
 						Context.User.Username + " --- Type \"$shop buy x n\" to buy n of item x\n"+
-						"Your Gold: "+ Data.members[Context.User.Id].money +"G\n\n";
+						"Your Gold: "+ Data.members[Context.User.Id].gold +"G\n\n";
 
 					for(int i = 0; i < Data.items.Count(); i++) {
 
@@ -627,16 +638,16 @@ public class Commander : ModuleBase<CommandContext> {
 				if(action.Equals("buy")) {
 
 					// Check if user has money
-					if(Data.members[Context.User.Id].money > 0) {
+					if(Data.members[Context.User.Id].gold > 0) {
 
 						// Check if user has enough for what they want to buy
-						if(Data.members[Context.User.Id].money >= totalPrice) {
+						if(Data.members[Context.User.Id].gold >= totalPrice) {
 
 							// Subtract money
-							Data.members[Context.User.Id].money -= totalPrice;
+							Data.members[Context.User.Id].gold -= totalPrice;
 							Data.members[Context.User.Id].inventory[option].quantity += quantity;
 
-							Data.members[Data.botID].money += totalPrice;
+							Data.members[Data.botID].gold += totalPrice;
 
 							// Save Bot and Users
 							Data.XMLWrite(Data.userData, Data.members.Values.ToList());
@@ -673,7 +684,7 @@ public class Commander : ModuleBase<CommandContext> {
 
 		if(Context.Message.Channel.Id == Data.slotsID) {
 			if(gold > 0) {
-				if(gold <= Data.members[Context.User.Id].money) {
+				if(gold <= Data.members[Context.User.Id].gold) {
 					
 					Data.Spin spin = new Data.Spin(new Random().Next(-100000000, 99999999));
 
@@ -682,8 +693,8 @@ public class Commander : ModuleBase<CommandContext> {
 
 					int winnings = 0;
 
-					user.money -= gold;
-					Data.members[Data.botID].money += gold;
+					user.gold -= gold;
+					Data.members[Data.botID].gold += gold;
 
 					// If tops match
 					if(spin.left.results[0].emoji.Equals(spin.middle.results[0].emoji) && (spin.left.results[0].emoji.Equals(spin.right.results[0].emoji))){
@@ -727,7 +738,7 @@ public class Commander : ModuleBase<CommandContext> {
 					
 					winnings *= gold;
 					message += user +"'s winnings: **"+ winnings +"G** ("+ (winnings - gold) +"G)";
-					user.money += winnings;
+					user.gold += winnings;
 
 					await ReplyAsync(message);
 
@@ -739,6 +750,41 @@ public class Commander : ModuleBase<CommandContext> {
 			}
 		} else {
 			await ReplyAsync("That's only useable in the slots channel");
+		}
+	}
+
+	[Command("mine"), Summary("Used for mining in the mines.")]
+	public async Task Mine() {
+
+		if(Context.Channel.Id == Data.minesID) {
+			if(!Data.InArena(Context.User.Id)) {
+
+				int rng = new Random().Next(100);
+				
+				string message = "*ting ting...*\n"+
+					"You found...\n";
+
+				if(rng < 10) { // 10%
+					int minGold = Data.members[Context.User.Id].miningLevel + Data.members[Context.User.Id].level;
+					int maxGold = 25 + Data.members[Context.User.Id].miningLevel + Data.members[Context.User.Id].level;
+
+					int goldFound = new Random(GenerateSeed() + (int)(Context.User.Id / 1000)).Next(minGold, maxGold);
+
+					message += goldFound +" gold!";
+					Data.members[Context.User.Id].gold += goldFound;
+					Data.members[Context.User.Id].AddMiningExp(1);
+				} else {
+
+					message += "Nothing :frowning:";
+				}
+
+				await ReplyAsync(message);
+
+			} else {
+				await ReplyAsync("You can't mine while in the arena. Type \"$arena leave\" to leave");
+			}
+		} else {
+			await ReplyAsync("You need to be in the mines channel to use that.");
 		}
 	}
 
@@ -1115,7 +1161,7 @@ public class Commander : ModuleBase<CommandContext> {
 				"**HP: **" + Data.members[id].hp + " / " + Data.members[id].maxHP + "\n" +
 				"**Strength:** " + Data.members[id].strength + "\n" +
 				"**Crit Rate:** " + Data.members[id].critical + "\n" +
-				"**Gold:** " + Data.members[id].money + "\n\n";
+				"**Gold:** " + Data.members[id].gold + "\n\n";
 
 		// For normal users
 		} else {
@@ -1136,7 +1182,7 @@ public class Commander : ModuleBase<CommandContext> {
 				"**Weapon:** " + Data.members[id].inventory[0].quantity + "\n" +
 				"**Armor:** " + Data.members[id].inventory[1].quantity + "\n" +
 				"**Health Potions:** "+ Data.members[id].inventory[2].quantity + "\n" +
-				"**Gold:** " + Data.members[id].money + "\n\n";
+				"**Gold:** " + Data.members[id].gold + "\n\n";
 		}
 
 	}
