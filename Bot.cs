@@ -16,16 +16,23 @@ public class Bot {
 	public static void Main(string[] args)
 		=> new Bot().MainAsync().GetAwaiter().GetResult();
 
+	public static string[] tokens = new string[2];
+
 	// Main
 	public async Task MainAsync() {
 		// Get Token Files
-		FileInfo tokenFile = new FileInfo(@"txt/tokens.txt");
-		string[] tokens = new string[2];
+		string tokenFilePath = @"txt/tokens.txt";
+		FileInfo tokenFile = new FileInfo(tokenFilePath);
+		int lineNum = 0;
+		string line;
 
-		for(int i = 0; i < tokens.Length; i++) {
-			tokens[i] = tokenFile.OpenText().ReadLine();
+		StreamReader file = new StreamReader(tokenFilePath);
+		while((line = file.ReadLine()) != null) {
+			tokens[lineNum] = line;
+			lineNum++;
 		}
-	
+		file.Close();
+
 		Data.mainToken = tokens[0];
 		Data.devToken = tokens[1];
 		Data.token = Data.mainToken; // Change this to switch servers. Everything else (channel and server IDs) should change accordingly.
@@ -148,7 +155,7 @@ public class Bot {
 	// Get Server ID
 	public async Task GetServerID() {
 
-		if(Data.token == Data.mainToken) {
+		if(Data.token.Equals(tokens[0])) {
 			await BotLog("Connecting to GDU Server");
 			Data.currentServer = Data.GDUID;
 			Data.generalID = Data.GDUGeneralID;
@@ -159,7 +166,7 @@ public class Bot {
 			Data.botID = Data.GDUBotID;
 		}else
 
-		if(Data.token == Data.devToken) {
+		if(Data.token.Equals(tokens[1])) {
 			await BotLog("Connecting to Botworks");
 			Data.currentServer = Data.botworksID;
 			Data.generalID = Data.BotworksGeneralID;

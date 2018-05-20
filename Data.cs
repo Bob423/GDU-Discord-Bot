@@ -15,7 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 // Static variables to allow all classes to access everything they need
 public static class Data {
 
-	public static string version = "3.1.1.5";
+	public static string version = "3.1.1.6";
 
 	public static DiscordSocketClient client;
 	public static CommandService cmdService;
@@ -273,7 +273,7 @@ public static class Data {
 
 				expNext = (int)((level * 5) * 1.1f);
 				this.chatexpNext = (ulong)(15 + chatLevel * 3.4f);
-				miningExp = (int)(20 + (level * 5));
+				miningExpNext = (int)(20 + (level * 5));
 					
 			} else {
 
@@ -283,6 +283,8 @@ public static class Data {
 
 				strength = (int)(baseSTR + (level * 1.8f)); // 25 base for GDU Bot
 				critical = (int)(baseCRIT + (level + 2)); // 5 base for GDU Bot
+
+				this.chatexpNext = (ulong)(15 + chatLevel * 3.4f);
 			}
 
 			status = "none";
@@ -388,6 +390,11 @@ public static class Data {
 			chatexp += amount;
 			totalMessages += amount;
 
+			if(Id == botID) {
+				UpdateSocket();
+				UpdateStats();
+			}
+
 			if(chatexp >= chatexpNext) {
 				ChatLevelUp(displayMessages);
 				return true;
@@ -405,13 +412,18 @@ public static class Data {
 			}
 
 			if(displayMessages) {
-				client.GetGuild(currentServer).GetTextChannel(generalID).SendMessageAsync(
+				client.GetGuild(currentServer).GetTextChannel(minesID).SendMessageAsync(
 					Username + "'s chat level has increased to level "+ chatLevel +"!");
 			}
 			return Task.CompletedTask;
 		}
 
 		public bool AddMiningExp(int amount) {
+			if(miningLevel < 1) {
+				miningLevel = 1;
+				UpdateStats();
+			}
+
 			miningExp += amount;
 			totalMiningExp += amount;
 
@@ -431,7 +443,7 @@ public static class Data {
 				UpdateStats();
 			}
 
-			client.GetGuild(currentServer).GetTextChannel(generalID).SendMessageAsync(
+			client.GetGuild(currentServer).GetTextChannel(minesID).SendMessageAsync(
 				Username + "'s mining level has increased to level "+ miningLevel +"!");
 
 			return Task.CompletedTask;

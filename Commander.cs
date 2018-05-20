@@ -276,7 +276,7 @@ public class Commander : ModuleBase<CommandContext> {
 	[Command("arena"), Summary("Join or leave the arena.\n"+
 		"You can also type \"view\" (or nothing) to view the users currently in the arena.\n"+
 		"If you want to automatically join the arena when you type in there, use $arena autojoin on\n" +
-		"Users wil automatically be removed from the arena if they don't use any arena commands for 1 hour. ($arena does not count)\n\n" +
+		"Users will automatically be removed from the arena if they don't use any arena commands for 1 hour. ($arena does not count)\n\n" +
 		"**Arena Commands:**\n"+
 		"**$attack:** Attack the specified user if they are in the arena.\n" +
 		"**$defend:** Cuts the damage you take from the next attack in half.\n" +
@@ -759,16 +759,16 @@ public class Commander : ModuleBase<CommandContext> {
 		if(Context.Channel.Id == Data.minesID) {
 			if(!Data.InArena(Context.User.Id)) {
 
-				int rng = new Random().Next(100);
+				int rng = new Random().Next(0, 100);
 				
 				string message = "*ting ting...*\n"+
 					"You found...\n";
 
-				if(rng < 20) { // 10%
+				if(rng < 22 +(Data.members[Context.User.Id].secretStat * 4)) { // 25%
 					int minGold = Data.members[Context.User.Id].miningLevel + Data.members[Context.User.Id].level;
 					int maxGold = 25 + Data.members[Context.User.Id].miningLevel + Data.members[Context.User.Id].level;
 
-					int goldFound = new Random(GenerateSeed() + (int)(Context.User.Id / 1000)).Next(minGold, maxGold);
+					int goldFound = new Random(GenerateSeed() + (int)(Context.User.Id / 1000)).Next(minGold + Data.members[Context.User.Id].secretStat, maxGold);
 
 					message += goldFound +" gold!";
 					Data.members[Context.User.Id].gold += goldFound;
@@ -777,8 +777,10 @@ public class Commander : ModuleBase<CommandContext> {
 
 					message += "Nothing :frowning:";
 				}
+				Data.members[Context.User.Id].AddMiningExp(1);
 
 				await ReplyAsync(message);
+				Data.SaveFiles();
 
 			} else {
 				await ReplyAsync("You can't mine while in the arena. Type \"$arena leave\" to leave");
@@ -1170,7 +1172,7 @@ public class Commander : ModuleBase<CommandContext> {
 				"**Username:** " + Data.members[id].Username + "\n" +
 				"**Nickname:** " + Data.members[id].Nickname + "\n" +
 
-				":crossed_swords: \n"+
+				"\n:crossed_swords: \n"+
 				"**Level:** " + Data.members[id].level + "\n" +
 				"**EXP:** " + Data.members[id].exp + "\n" +
 				"**EXP To Next Level:** " + Data.members[id].expNext +" ("+ (Data.members[id].expNext - Data.members[id].exp) +" more)\n"+
@@ -1185,7 +1187,7 @@ public class Commander : ModuleBase<CommandContext> {
 				"**Armor:** " + Data.members[id].inventory[1].quantity + "\n" +
 				"**Health Potions:** "+ Data.members[id].inventory[2].quantity + "\n" +
 
-				":pick:\n"+
+				"\n:pick:\n"+
 				"**Mining Level:** " + Data.members[id].miningLevel + "\n" +
 				"**Mining EXP:** " + Data.members[id].miningExp + "\n" +
 				"**Mining EXP To Next Level:** " + Data.members[id].miningExpNext +" ("+ (Data.members[id].miningExpNext - Data.members[id].miningExp) +" more)\n"+

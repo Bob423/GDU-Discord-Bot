@@ -1,3 +1,6 @@
+v3.1.1.6 : 5/20/18
+> Various Bug Fixes
+
 v3.1.1.5 : 5/20/18
 > Increased chance of finding gold in mines (from 10% to 20%)
 
