@@ -749,6 +749,22 @@ public class Commander : ModuleBase<CommandContext> {
 		}
 	}
 
+	// Stop the fight!
+	[Command("stopFight"), Summary("Cancel the fight with GDU Bot and reset his HP and target list.")]
+	public async Task StopFight() {
+		if(Data.arenaBotFight) {
+			Data.arenaBotFight = false;
+			Data.members[Data.botID].hp = Data.members[Data.botID].maxHP;
+			Data.members[Data.botID].targets.Clear();
+			Data.arenaBotResetTimer = 0;
+
+			await ReplyAsync("Ok.");
+		} else {
+
+			await ReplyAsync("I'm not fighting anyone at the moment. You can change that by typing \"$attack GDU Bot\" while in the arena channel.");
+		}	
+	}
+
 	[Command("mine"), Summary("Used for mining in the mines.")]
 	public async Task Mine() {
 
@@ -787,7 +803,7 @@ public class Commander : ModuleBase<CommandContext> {
 	}
 
 	[Command("miningLevel"), Summary("Displays a user's mining level")]
-	public async Task MiningLevel(string user = "me") {
+	public async Task MiningLevel([Remainder]string user = "me") {
 		ulong userId = 0;
 		string message = "User not found.";
 
@@ -843,20 +859,20 @@ public class Commander : ModuleBase<CommandContext> {
 		await ReplyAsync("```"+ message +"```");
 	}
 
-	// Stop the fight!
-	[Command("stopFight"), Summary("Cancel the fight with GDU Bot and reset his HP and target list.")]
-	public async Task StopFight() {
-		if(Data.arenaBotFight) {
-			Data.arenaBotFight = false;
-			Data.members[Data.botID].hp = Data.members[Data.botID].maxHP;
-			Data.members[Data.botID].targets.Clear();
-			Data.arenaBotResetTimer = 0;
+	[Command("myLevels"), Summary("Display your Chat, Arena, and Mining levels")]
+	public async Task MyLevels() {
+		ulong id = Context.User.Id;
 
-			await ReplyAsync("Ok.");
-		} else {
+		await ReplyAsync(
+			"**Chat Level:** " + Data.members[id].chatLevel + "\n" +
+			"**Arena Level:** " + Data.members[id].level +"\n"+
+			"**Mining Level:** " + Data.members[id].miningLevel +"\n"
+			);
+	}
 
-			await ReplyAsync("I'm not fighting anyone at the moment. You can change that by typing \"$attack GDU Bot\" while in the arena channel.");
-		}	
+	[Command("gold"), Summary("Display your gold")]
+	public async Task Gold() {
+		await ReplyAsync("You have "+ Data.members[Context.User.Id].gold +"G");
 	}
 
 	[Command("version"), Summary("A link to GDU Bot 3.0's github page")]
@@ -1237,7 +1253,7 @@ public class Commander : ModuleBase<CommandContext> {
 
 				"**HP: **" + Data.members[id].hp + " / " + Data.members[id].maxHP + "\n" +
 				"**Strength:** " + Data.members[id].strength + "\n" +
-				"**Crit Rate:** " + Data.members[id].critical + "("+ calculateCrit(Data.members[id].critical) +"%)\n" +
+				"**Crit Rate:** " + Data.members[id].critical + " ("+ calculateCrit(Data.members[id].critical) +"%)\n" +
 				"**Weapon:** " + Data.members[id].inventory[0].quantity + "\n" +
 				"**Armor:** " + Data.members[id].inventory[1].quantity + "\n" +
 				"**Health Potions:** "+ Data.members[id].inventory[2].quantity + "\n" +

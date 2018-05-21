@@ -15,7 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 // Static variables to allow all classes to access everything they need
 public static class Data {
 
-	public static string version = "3.1.2.0";
+	public static string version = "3.1.3.0";
 
 	public static DiscordSocketClient client;
 	public static CommandService cmdService;
@@ -273,7 +273,7 @@ public static class Data {
 
 				expNext = (int)((level * 5) * 1.1f);
 				this.chatexpNext = (ulong)(15 + chatLevel * 3.4f);
-				miningExpNext = (int)(20 + (level * 5));
+				miningExpNext = (int)(20 + (miningLevel * 5));
 					
 			} else {
 
@@ -412,7 +412,7 @@ public static class Data {
 			}
 
 			if(displayMessages) {
-				client.GetGuild(currentServer).GetTextChannel(minesID).SendMessageAsync(
+				client.GetGuild(currentServer).GetTextChannel(generalID).SendMessageAsync(
 					Username + "'s chat level has increased to level "+ chatLevel +"!");
 			}
 			return Task.CompletedTask;
