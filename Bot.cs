@@ -35,7 +35,10 @@ public class Bot {
 
 		Data.mainToken = tokens[0];
 		Data.devToken = tokens[1];
+
+		////////////////////////////////
 		Data.token = Data.mainToken; // Change this to switch servers. Everything else (channel and server IDs) should change accordingly.
+		///////////////////////////////
 
 		Data.client = new DiscordSocketClient();
 		Data.cmdService = new CommandService();
@@ -211,40 +214,42 @@ public class Bot {
 	}
 	public async Task HandleCommand(SocketMessage msg) {
 
-		// Ignore bot commands
-		//if(!msg.Author.IsBot) {
+		try{
+			int num = int.Parse(msg.Content.ToCharArray()[1].ToString());
 
-			if(Data.members[msg.Author.Id].hp > Data.members[msg.Author.Id].maxHP) {
-				Data.members[msg.Author.Id].hp = Data.members[msg.Author.Id].maxHP;
-			}
+		} catch {
+			
+			if(!msg.Content.ToCharArray()[1].ToString().Equals("$")) {
+				if(Data.members[msg.Author.Id].hp > Data.members[msg.Author.Id].maxHP) {
+					Data.members[msg.Author.Id].hp = Data.members[msg.Author.Id].maxHP;
+				}
 
-			// Don't process the command if it was a System Message
-			var message = msg as SocketUserMessage;
-			if (message == null) return;
-			// Create a number to track where the prefix ends and the command begins
-			int argPos = 0;
-			// Determine if the message is a command, based on if it starts with '!' or a mention prefix
-			if (!(message.HasCharPrefix('$', ref argPos) || message.HasMentionPrefix(Data.client.CurrentUser, ref argPos))) return;
-			// Create a Command Context
-			var context = new CommandContext(Data.client, message);
+				// Don't process the command if it was a System Message
+				var message = msg as SocketUserMessage;
+				if (message == null) return;
+				// Create a number to track where the prefix ends and the command begins
+				int argPos = 0;
+				// Determine if the message is a command, based on if it starts with '!' or a mention prefix
+				if (!(message.HasCharPrefix('$', ref argPos) || message.HasMentionPrefix(Data.client.CurrentUser, ref argPos))) return;
+				// Create a Command Context
+				var context = new CommandContext(Data.client, message);
 
-			// Get help information if user asks for help
-			if(context.Message.Content.EndsWith(" help")) {
-				await context.Channel.SendMessageAsync(Data.helpEntries[context.Message.Content]);
+				// Get help information if user asks for help
+				if(context.Message.Content.EndsWith(" help")) {
+					await context.Channel.SendMessageAsync(Data.helpEntries[context.Message.Content]);
 
-			} else {
+				} else {
 
-				// Execute the command. (result does not indicate a return value, 
-				// rather an object stating if the command executed successfully)
-				var result = await Data.cmdService.ExecuteAsync(context, argPos, Data.services);
+					// Execute the command. (result does not indicate a return value, 
+					// rather an object stating if the command executed successfully)
+					var result = await Data.cmdService.ExecuteAsync(context, argPos, Data.services);
 
-				if (!result.IsSuccess) {
-					await context.Channel.SendMessageAsync(result.ErrorReason +"\nTry adding \'help\' to the command for more info.");
+					if (!result.IsSuccess) {
+						await context.Channel.SendMessageAsync(result.ErrorReason +"\nTry adding \'help\' to the command for more info.");
+					}
 				}
 			}
-
-		//}
-
+		}
 	}
 
 	// Load Files

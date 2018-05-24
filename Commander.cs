@@ -378,7 +378,7 @@ public class Commander : ModuleBase<CommandContext> {
 				int damage = GetDamage(Context.User.Id, targetId, 0.1f);
 				
 				// Get Crit
-				if(GetCrit(Data.members[Context.User.Id].critical + (Data.members[Context.User.Id].secretStat * 10))) {
+				if(GetCrit(Context.User.Id)) {
 					damage *= 2;
 					message += "**Critical Hit!**\n";
 				}
@@ -674,20 +674,27 @@ public class Commander : ModuleBase<CommandContext> {
 	// bet
 	[Command("slots"), Alias("bet", "spin"), Summary("Bet gold in the slots channel. You can earn gold by fighting in the arena as well."+
 		"\n**NOTE: Please don't spam commands. The bot can get backed up easily and there is currently no easy fix to this, so chill.\n"+
-		"You may even need to wait a few seconds for a command to register.**\n")]
-	public async Task Bet(int gold = 1) {
+		"You may even need to wait a few seconds for a command to register.**\n" +
+		"You can also use add a theme to change what emojis will appear. However, the chances of winning will not change and <:Marked:345037495060267018>" +
+		"Will still have the same chance to appear.\n" +
+		"Themes: members, members2, rpg")]
+	public async Task Bet(int gold = 1, string theme = "members") {
 		Data.User user = Data.members[Context.User.Id];
 
 		if(Context.Message.Channel.Id == Data.slotsID) {
 			if(gold > 0) {
 				if(gold <= Data.members[Context.User.Id].gold) {
 					
-					Data.Spin spin = new Data.Spin(new Random().Next(-100000000, 99999999));
+					Data.Spin spin = new Data.Spin(new Random().Next(-100000000, 99999999), Context.User.Id, theme);
+					bool diagonalR = false;
+					bool diagonalL = false;
+					bool midHorz = false;
+					bool midVert = false;
 
 					string message = user.Username +" bets **"+ gold +"G**\n\n"+
 						spin +"\n";
 
-					int winnings = 0;
+					float winnings = 0;
 
 					user.gold -= gold;
 					Data.members[Data.botID].gold += gold;
@@ -700,6 +707,7 @@ public class Commander : ModuleBase<CommandContext> {
 					// If left diagonals match
 					if(spin.left.results[0].emoji.Equals(spin.middle.results[1].emoji) && (spin.left.results[0].emoji.Equals(spin.right.results[2].emoji))){
 						winnings += 2;
+						diagonalL = true;
 					}
 
 					// If left verticals match
@@ -710,16 +718,19 @@ public class Commander : ModuleBase<CommandContext> {
 					// If middles match
 					if(spin.left.results[1].emoji.Equals(spin.middle.results[1].emoji) && (spin.left.results[1].emoji.Equals(spin.right.results[1].emoji))){
 						winnings += 2;
+						midHorz = true;
 					}
 
 					// If middle verticals match
 					if(spin.middle.results[0].emoji.Equals(spin.middle.results[1].emoji) && (spin.middle.results[0].emoji.Equals(spin.middle.results[2].emoji))){
 						winnings += 2;
+						midVert = true;
 					}
 
 					// If right diagonals match
 					if(spin.left.results[2].emoji.Equals(spin.middle.results[1].emoji) && (spin.left.results[2].emoji.Equals(spin.right.results[0].emoji))){
 						winnings += 2;
+						diagonalR = true;
 					}
 
 					// If right verticals match
@@ -731,13 +742,40 @@ public class Commander : ModuleBase<CommandContext> {
 					if(spin.left.results[2].emoji.Equals(spin.middle.results[2].emoji) && (spin.left.results[2].emoji.Equals(spin.right.results[2].emoji))){
 						winnings += 2;
 					}
-					
+
+					int bonus = 0;
+
+					spin.slotsList = new List<ulong>() {
+						spin.left.results[0].Id, spin.middle.results[0].Id, spin.right.results[0].Id,
+						spin.left.results[1].Id, spin.middle.results[1].Id, spin.right.results[1].Id,
+						spin.left.results[2].Id, spin.middle.results[2].Id, spin.right.results[2].Id,
+					};
+
+					// Find Markeds
+					foreach(ulong emoji in spin.slotsList) {
+						if(emoji == Data.slotEmojis[4].Id) {
+							bonus += 2;
+						}
+					}
+
+					// If X
+					if(diagonalL && diagonalR) {
+						winnings += 1;
+					}
+
+					// If +
+					if(midHorz && midVert) {
+						winnings += 1;
+					}
+
 					winnings *= gold;
-					message += user +"'s winnings: **"+ winnings +"G** ("+ (winnings - gold) +"G)";
-					user.gold += winnings;
+					winnings += bonus;
+					winnings += (winnings * (0.5f * (bonus / 4)));
+
+					message += user +"'s winnings: **"+ (int)winnings +"G** ("+ (int)(winnings - gold) +"G)";
+					user.gold += (int)winnings;
 
 					await ReplyAsync(message);
-
 				} else {
 					await ReplyAsync("You don't have that much money.");
 				}
@@ -776,11 +814,16 @@ public class Commander : ModuleBase<CommandContext> {
 				string message = "*ting ting...*\n"+
 					"You found...\n";
 
-				if(rng < 22 +(Data.members[Context.User.Id].secretStat * 4)) { // 25%
+				if(rng < 15 + CalculateCrit(Context.User.Id)) { // 20+%
 					int minGold = Data.members[Context.User.Id].miningLevel + Data.members[Context.User.Id].level;
 					int maxGold = 25 + Data.members[Context.User.Id].miningLevel + Data.members[Context.User.Id].level;
 
 					int goldFound = new Random(GenerateSeed() + (int)(Context.User.Id / 1000)).Next(minGold + Data.members[Context.User.Id].secretStat, maxGold);
+
+					if(new Random(GenerateSeed() - Data.members[Context.User.Id].luck).Next(0, 100) < CalculateCrit(Context.User.Id)) {
+						goldFound *= 2;
+						message = "**Critical...Mine?**\n";
+					}
 
 					message += goldFound +" gold!";
 					Data.members[Context.User.Id].gold += goldFound;
@@ -859,6 +902,33 @@ public class Commander : ModuleBase<CommandContext> {
 		await ReplyAsync("```"+ message +"```");
 	}
 
+	// top miners (10)
+	[Command("richest"), Summary("Displays a list of users and their gold")]
+	public async Task Richest(int number = 10) {
+		List<Data.User> users = Data.members.Values.OrderByDescending(user => user.gold).ToList();
+		List<Data.User> UsernameCut = users.OrderByDescending(user => user.Username.Length).ToList();
+		List<Data.User> NicknameCut = users.OrderByDescending(user => user.Nickname.Length).ToList();
+		int numOfUsers = number;
+
+		if(number > users.Count()) {
+			numOfUsers = users.Count();
+		}
+
+		string message = "[Top "+ number +" Richest Members]\n\n";
+
+		for(int i = 0; i < numOfUsers; i++) {
+
+			message += "[#"+ (i+1).ToString("0#") +"] "+ users[i].Username +
+				AddSpace(UsernameCut[0].Username.Length, users[i].Username)+
+				" / "+ users[i].Nickname +
+				AddSpace(NicknameCut[0].Nickname.Length, users[i].Nickname)+
+				" | "+ string.Format("{0,2}", users[i].gold) +"G\n";
+			
+		}
+
+		await ReplyAsync("```"+ message +"```");
+	}
+
 	[Command("myLevels"), Summary("Display your Chat, Arena, and Mining levels")]
 	public async Task MyLevels() {
 		ulong id = Context.User.Id;
@@ -870,9 +940,75 @@ public class Commander : ModuleBase<CommandContext> {
 			);
 	}
 
-	[Command("gold"), Summary("Display your gold")]
+	[Command("gold"), Alias("money", "myGold", "myMoney"), Summary("Display your gold")]
 	public async Task Gold() {
 		await ReplyAsync("You have "+ Data.members[Context.User.Id].gold +"G");
+	}
+
+	[Command("gift"), Alias("give", "trade"), Summary("Trade with other users")]
+	public async Task Trade(string item, int amount, [Remainder] string user) {
+		ulong userId = Data.GetMemberId(user);
+		ulong selfId = Context.User.Id;
+		string message = "User not found.";
+
+		if(userId > 200) {
+			await Data.members[userId].UpdateStats();
+			await Data.members[userId].UpdateSocket();
+
+			await Data.members[selfId].UpdateStats();
+			await Data.members[selfId].UpdateSocket();
+
+			message = Data.members[selfId].Username +" gives "+ amount;
+
+			if(item.Equals("gold")) {
+				message += " gold to "+ Data.members[userId].Username;
+				
+				if(Data.members[selfId].gold >= amount) {
+					Data.members[selfId].gold -= amount;
+					Data.members[userId].gold += amount;
+				} else {
+					message = "You don't have enough money.";
+				}
+
+			}else
+
+			if(item.Equals("weapon")) {
+				message += " weapon to "+ Data.members[userId].Username;
+
+				if(Data.members[selfId].inventory[0].quantity >= amount) {
+					Data.members[selfId].inventory[0].quantity -= amount;
+					Data.members[userId].inventory[0].quantity += amount;
+				} else {
+					message = "You don't have enough weapon.";
+				}
+			}else
+
+			if(item.Equals("armor")) {
+				message += " armor to "+ Data.members[userId].Username;
+
+				if(Data.members[selfId].inventory[1].quantity >= amount) {
+					Data.members[selfId].inventory[1].quantity -= amount;
+					Data.members[userId].inventory[1].quantity += amount;
+				} else {
+					message = "You don't have enough armor.";
+				}
+			}else
+
+			if(item.Equals("potion")) {
+				message += " potions to "+ Data.members[userId].Username;
+
+				if(Data.members[selfId].inventory[2].quantity >= amount) {
+					Data.members[selfId].inventory[2].quantity -= amount;
+					Data.members[userId].inventory[2].quantity += amount;
+				} else {
+					message = "You don't have enough potions.";
+				}
+			}
+
+		}
+
+		await ReplyAsync(message);
+
 	}
 
 	[Command("version"), Summary("A link to GDU Bot 3.0's github page")]
@@ -885,7 +1021,7 @@ public class Commander : ModuleBase<CommandContext> {
 		await ReplyAsync("https://github.com/Bob423/GDU-Discord-Bot");
 	}
 
-	int hiddenCommands = 1;
+	int hiddenCommands = 2;
 
 	// say
 	[Command("say"), RequireUserPermission(GuildPermission.Administrator)]
@@ -893,7 +1029,17 @@ public class Commander : ModuleBase<CommandContext> {
 		await Context.Message.DeleteAsync();
 		await ReplyAsync(message);
 	}
-	
+
+	[Command("save"), RequireUserPermission(GuildPermission.Administrator)]
+	public async Task Save() {
+		foreach(Data.User user in Data.members.Values) {
+			await user.UpdateSocket();
+			await user.UpdateStats();
+		}
+
+		Data.SaveFiles();
+	}
+
 	// Calculates base damage of an attack
 	public int GetDamage(ulong attackerID, ulong targetID, float variance) {
 		
@@ -941,20 +1087,23 @@ public class Commander : ModuleBase<CommandContext> {
 	}
 
 	// Decides if user attack is a crit
-	public bool GetCrit(int userCrit) {
-		float critRate = calculateCrit(userCrit);
+	public bool GetCrit(ulong userId) {
+		float critRate = CalculateCrit(userId);
 
 		int rng = new Random().Next(0, 100);
 
 		return (rng <= critRate);
 	}
 
-	public float calculateCrit(int userCrit) {
+	public static float CalculateCrit(ulong userId) {
+		int userCrit = Data.members[userId].luck;
+		int secretStat = Data.members[userId].secretStat;
+
 		// Calculate crit rate
 		if(userCrit < 100) {
-			return 5.0f + (userCrit / 10.0f);
+			return 5.0f + (userCrit / 10.0f) + (secretStat * 5);
 		} else {
-			return 15.0f + (userCrit / 50.0f);
+			return 15.0f + (userCrit / 50.0f) + (secretStat * 5);
 		}
 	}
 
@@ -1233,7 +1382,7 @@ public class Commander : ModuleBase<CommandContext> {
 
 				"**HP: **" + Data.members[id].hp + " / " + Data.members[id].maxHP + "\n" +
 				"**Strength:** " + Data.members[id].strength + "\n" +
-				"**Crit Rate:** " + Data.members[id].critical + "\n" +
+				"**Luck:** " + Data.members[id].luck + " ("+ CalculateCrit(id) +"% Crit Rate)\n" +
 				"**Gold:** " + Data.members[id].gold + "\n\n";
 
 		// For normal users
@@ -1253,7 +1402,7 @@ public class Commander : ModuleBase<CommandContext> {
 
 				"**HP: **" + Data.members[id].hp + " / " + Data.members[id].maxHP + "\n" +
 				"**Strength:** " + Data.members[id].strength + "\n" +
-				"**Crit Rate:** " + Data.members[id].critical + " ("+ calculateCrit(Data.members[id].critical) +"%)\n" +
+				"**Luck:** " + Data.members[id].luck + " ("+ (CalculateCrit(id) - (Data.members[id].secretStat * 5))+"% Crit Rate)\n" +
 				"**Weapon:** " + Data.members[id].inventory[0].quantity + "\n" +
 				"**Armor:** " + Data.members[id].inventory[1].quantity + "\n" +
 				"**Health Potions:** "+ Data.members[id].inventory[2].quantity + "\n" +
@@ -1283,7 +1432,7 @@ public class Commander : ModuleBase<CommandContext> {
 		return 0;
 	}
 
-	public int GenerateSeed() {
+	public static int GenerateSeed() {
 		return new Random().Next(-100000000, 99999999);
 	}
 }

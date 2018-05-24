@@ -15,7 +15,7 @@ using Microsoft.Extensions.DependencyInjection;
 // Static variables to allow all classes to access everything they need
 public static class Data {
 
-	public static string version = "3.1.3.0";
+	public static string version = "3.1.6.0";
 
 	public static DiscordSocketClient client;
 	public static CommandService cmdService;
@@ -103,20 +103,34 @@ public static class Data {
 		new Data.ShopItem("Armor", 1, 50, false, 0),
 		new Data.ShopItem("Health Potion", 2, 20, true, 0.3f),
 	};
-	/*
-		new SlotResult("Marked", 433934233476661279),
-		new SlotResult("RMXPol", 433934233078071296),
-		new SlotResult("isaacsol", 445087987466895371),
-		new SlotResult("Bob", 433934152656748544),
-		new SlotResult("gaust", 433934215881424896)
-	*/
-	public static List<SlotResult> slotEmojis = new List<SlotResult>() {
-		new SlotResult("Marked", 345037495060267018),
+
+	// Slot emoji themes
+	public static SlotResult Marked = new SlotResult("Marked", 345037495060267018);
+
+	public static List<SlotResult> MemberSlots1 = new List<SlotResult>() {
+		new SlotResult("Kushi", 449026139688665088),
 		new SlotResult("RMXPol", 342912767461687298),
 		new SlotResult("isaacsol", 445009442828714011),
 		new SlotResult("Bob", 345036765926522880),
-		new SlotResult("gaust", 433466411373953034)
 	};
+	public static List<SlotResult> MemberSlots2 = new List<SlotResult>() {
+		new SlotResult("Zahra", 449027425209286656),
+		new SlotResult("gaust", 433466411373953034),
+		new SlotResult("Chief", 449027992526520330),
+		new SlotResult("BlueLiger", 449036021028356097),
+	};
+	public static List<SlotResult> RandomRPGSlots = new List<SlotResult>() {
+		new SlotResult("RMXPFighter01", 342911907629498369),
+		new SlotResult("RMXPWeapon01", 324772079696347158),
+		new SlotResult("RMXPWeapon03", 324772079817850880),
+		new SlotResult("RMXPShield01", 324772079817850880),
+		new SlotResult("RMXPItem03", 324772080593928195),
+		new SlotResult("RMXPItem04", 324772079654404107),
+		new SlotResult("mv_fire", 415286213407277056),
+		new SlotResult("mv_actor1", 449053107218022421)
+	};
+
+	public static List<SlotResult> slotEmojis = new List<SlotResult>();
 
 	public static List<ulong> fighters = new List<ulong>() {};
 
@@ -145,7 +159,7 @@ public static class Data {
 		public int hp;
 		public int maxHP;
 		public int strength;
-		public int critical;
+		public int luck;
 		public int secretStat;
 
 		public int miningLevel;
@@ -157,7 +171,7 @@ public static class Data {
 
 		public int baseHP;
 		public int baseSTR;
-		public int baseCRIT;
+		public int baseLUK;
 
 		public string status;
 		public bool beenAttacked;
@@ -207,14 +221,14 @@ public static class Data {
 			this.level = level;
 			this.baseHP = baseHP;
 			this.baseSTR = baseSTR;
-			this.baseCRIT = baseCRIT;
+			this.baseLUK = baseCRIT;
 			this.inventory = Data.items;
 
 			maxHP = (int)Math.Pow((baseHP + (level * 15) + 12), 1.15f); // 200 base for GDU Bot
 			hp = maxHP;
 
 			strength = (int)(baseSTR + (level * 1.8f)); // 25 base for GDU Bot
-			critical = (int)(baseCRIT + (level + 2)); // 5 base for GDU Bot
+			luck = (int)(baseCRIT + (level + 2)); // 5 base for GDU Bot
 
 			status = "none";
 		}
@@ -256,20 +270,33 @@ public static class Data {
 					id[i] = Int32.Parse(idchar[i].ToString());
 				}
 
-				int lastDigit = Id.ToString().ToCharArray().Length - 1;
-				int lastDigit2nd = Id.ToString().ToCharArray().Length - 2;
-				int twelveDigit = Id.ToString().ToCharArray().Length - 6;
+				int lastDigit = id.Length - 5;
+				int lastDigit2nd = id.Length - 2;
+				int twelveDigit = id.Length - 6;
 
-				baseHP = 35 + (id[lastDigit] / 2);
-				int hpRange = (baseHP - 35);
+				baseHP = 40 + (id[lastDigit] / 2) + secretStat;
+				int hpRange = (baseHP - 40);
 
-				baseSTR = 10 + (hpRange - (id[lastDigit2nd] / 2));
-				baseCRIT = 1 + (id[twelveDigit] / 2);
+				baseSTR = 10 + (hpRange - (id[lastDigit2nd] / 2)) + secretStat;
 
-				maxHP = (int)(baseHP + (level * 1.2f));
-			
+				if(baseHP < 44) {
+					baseHP += 2;
+				}
+				if(baseSTR < 15) {
+					baseSTR += 2;
+				}
+				if(baseSTR < 10) {
+					baseSTR += 4;
+				}
+				if(baseSTR <= 12) {
+					baseSTR += 1;
+				}
+
+				baseLUK = 1 + (id[twelveDigit] / 2) + secretStat;
+
+				maxHP = (int)(baseHP + (level * 1.2f)) + secretStat;	
 				strength = (int)(baseSTR + (level * 0.75f));
-				critical = (int)(baseCRIT + (level / 4));
+				luck = (int)(baseLUK + (level / 4));
 
 				expNext = (int)((level * 5) * 1.1f);
 				this.chatexpNext = (ulong)(15 + chatLevel * 3.4f);
@@ -282,7 +309,7 @@ public static class Data {
 				hp = maxHP;
 
 				strength = (int)(baseSTR + (level * 1.8f)); // 25 base for GDU Bot
-				critical = (int)(baseCRIT + (level + 2)); // 5 base for GDU Bot
+				luck = (int)(baseLUK + (level + 2)); // 5 base for GDU Bot
 
 				this.chatexpNext = (ulong)(15 + chatLevel * 3.4f);
 			}
@@ -353,7 +380,7 @@ public static class Data {
 			UpdateStats();
 			int oldHP = maxHP;
 			int oldSTR = strength;
-			int oldCRIT = critical;
+			int oldLUK = luck;
 
 			while(exp >= expNext) {
 				level += 1;
@@ -367,7 +394,7 @@ public static class Data {
 				"**"+ Username +"** has leveled up and is now level "+ level +"!\n"+
 				"**Max HP:** "+ oldHP +" => "+ maxHP +"\n"+
 				"**Strength:** "+ oldSTR +" => "+ strength +"\n"+
-				"**Crit Rate:** "+ oldCRIT +" => "+ critical +"\n";
+				"**Luck:** "+ oldLUK +" => "+ luck +"\n";
 		}
 
 		public string BotArenaLevelUp() {			
@@ -552,35 +579,73 @@ public static class Data {
 	public class Slot {
 		public List<SlotResult> results = new List<SlotResult>();
 		int rng;
+		string theme;
 
-		public Slot(int seed) {
+		public Slot(int seed, ulong userId, string theme) {
 			this.rng = new Random(seed).Next(10000);
+			this.theme = theme;
 
 			int[] slotrng = new int[] {
 				this.rng % 100,
 				(this.rng % 10000) / 100,
 				this.rng / 1000,
 			};
-	
+
+			ChangeTheme();
+
 			foreach(int rng in slotrng) {
-				
-				if(rng < 20) {
-					results.Add(slotEmojis[0]);
+				int rand = rng;
+
+				if(new Random(Commander.GenerateSeed() - Data.members[userId].luck).Next(0, 100) < Commander.CalculateCrit(userId)) {
+					rand = 10;
 				}
-				if(rng < 40) {
-					results.Add(slotEmojis[1]);
-				}
-				if(rng < 60) {
-					results.Add(slotEmojis[2]);
-				}
-				if(rng < 80) {
-					results.Add(slotEmojis[3]);
-				}
-				if(rng <= 99) {
+
+				if(rand < 20) {
 					results.Add(slotEmojis[4]);
 				}
+				if(rand < 40) {
+					results.Add(slotEmojis[0]);
+				}
+				if(rand < 60) {
+					results.Add(slotEmojis[1]);
+				}
+				if(rand < 80) {
+					results.Add(slotEmojis[2]);
+				}
+				if(rand <= 99) {
+					results.Add(slotEmojis[3]);
+				}
+			}				
+		}
+
+		private void ChangeTheme() {
+
+			if(theme.ToLower().Equals("members")) {
+				slotEmojis = MemberSlots1;
+				
+			} else
+
+			if(theme.ToLower().Equals("members2")) {
+				slotEmojis = MemberSlots2;
+			}else
+
+			if(theme.ToLower().Equals("rpg")) {
+				List<SlotResult> RPGTheme = new List<SlotResult>();
+				int i = 0;
+
+				while(RPGTheme.Count < 4) {
+					i++;
+					int randEmoji = new Random(Commander.GenerateSeed() - (i * 10)).Next(0, RandomRPGSlots.Count());
+
+					if(!RPGTheme.Contains(RandomRPGSlots[randEmoji])) {
+						RPGTheme.Add(RandomRPGSlots[randEmoji]);
+					}
+				}
+
+				slotEmojis = RPGTheme;
 			}
 
+			slotEmojis.Add(Marked);
 		}
 	}
 
@@ -589,10 +654,12 @@ public static class Data {
 		public Slot middle;
 		public Slot right;
 
-		public Spin(int seed) {
-			left = new Slot(seed);
-			middle = new Slot(seed * 12);
-			right = new Slot(seed / 12);
+		public List<ulong> slotsList = new List<ulong>();
+
+		public Spin(int seed, ulong userId, string theme) {
+			left = new Slot(seed, userId, theme);
+			middle = new Slot(seed * 12, userId, theme);
+			right = new Slot(seed / 12, userId, theme);
 		}
 
 		public override string ToString() {
